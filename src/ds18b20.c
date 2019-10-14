@@ -2,7 +2,7 @@
 #include "ds18b20.h"
 
 // Helper for allocating new things
-#define new (what)(what *) malloc(sizeof(what))
+#define new(what) (what *) malloc(sizeof(what))
 
 // Helper for allocating strings
 #define new_string(len) (char *)malloc(len * sizeof(char))
@@ -12,7 +12,7 @@ static int _pin;
 static int _res;
 static int _waiting_us;
 static uint8_t _cfg_reg;
-struct ds18b20_result *_list;
+ds18b20_result* _list;
 static volatile bool is_busy;
 
 const uint8_t ds18b20_family_code = 0x28;
@@ -101,7 +101,7 @@ void ds18b20_init(int pin, int res)
 
 void ds18b20_deinit(void)
 {
-    struct ds18b20_result *temp;
+    ds18b20_result *temp;
 
     // Cleanup
     is_busy = true;
@@ -118,14 +118,14 @@ void ds18b20_deinit(void)
 void ds18b20_find_sensors(void)
 {
     uint8_t rom[8];
-    struct ds18b20_result *temp;
+    ds18b20_result* temp;
 
     // Find all the sensors
     mgos_onewire_search_clean(ow);                          // Reset search
     mgos_onewire_target_setup(ow, ds18b20_family_code);     // Skip devices that are not DS18B20's
     while (mgos_onewire_next(ow, rom, 1))
     {                                                       // Loop over all devices
-        temp = new (struct ds18b20_result);                 // Create a new results struct
+        temp = new(ds18b20_result);                        // Create a new results struct
         if (temp == NULL)
         {                                                   // Make sure it worked
             LOG(LL_ERROR, ("Memory allocation failure!"));  // If not, print a useful message
@@ -141,9 +141,9 @@ void ds18b20_find_sensors(void)
 // Read all temperatures
 void ds18b20_read_all(ds18b20_read_t callback)
 {
-    uint8_t rom[8], data[9];
+    uint8_t data[9];
     int16_t raw;
-    struct ds18b20_result *temp;
+    ds18b20_result* temp;
 
     if (is_busy)
     {
@@ -181,7 +181,8 @@ void ds18b20_read_all(ds18b20_read_t callback)
     LOG(LL_DEBUG, ("%lld: Done", mgos_uptime_micros()));
 
     // Invoke the callback
-    callback(_list);
+    mgos_invoke_cb((mgos_cb_t)callback, _list, false);
+    // callback(_list);
 
     // reset busy flag
     is_busy = false;
@@ -190,4 +191,24 @@ void ds18b20_read_all(ds18b20_read_t callback)
 bool mgos_mongoose_os_ds18b20_init(void)
 {
     return true;
+}
+
+// For mJS API
+static const struct mjs_c_struct_member ds18b20_result_descr[] = {
+    // {"rom", offsetof(ds18b20_result, rom), MJS_STRUCT_FIELD_TYPE_INT_PTR, NULL},
+    {"mac", offsetof(ds18b20_result, mac), MJS_STRUCT_FIELD_TYPE_CHAR_PTR, NULL},
+    {"temp", offsetof(ds18b20_result, temp), MJS_STRUCT_FIELD_TYPE_FLOAT, NULL},
+    {"next", offsetof(ds18b20_result, next), MJS_STRUCT_FIELD_TYPE_STRUCT_PTR, NULL},
+    {NULL, 0, MJS_STRUCT_FIELD_TYPE_INVALID, NULL},
+};
+
+const struct mjs_c_struct_member* get_ds18b20_result_descr(void)
+{
+    return ds18b20_result_descr;
+}
+
+void ds18b20_read_all_wrap( void (*callback)(void *), void* user_data )
+{
+    (void)user_data;
+    ds18b20_read_all( (ds18b20_read_t)callback );
 }

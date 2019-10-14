@@ -5,6 +5,10 @@
 Ultra-simple C library for DS18B20 sensors. Connect all the sensors data pins
 to a single GPIO pin, and then call ds18b20_read_all. That's it.
 
+### 注意
+未完成のライブラリです。
+mJS用のAPIを使用するとクラッシュします。
+
 ## Install
 
 Add to libs section of your mos.yml.
