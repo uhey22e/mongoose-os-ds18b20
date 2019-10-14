@@ -12,12 +12,31 @@
 // Converts a uint8_t rom address to a MAC address string
 #define to_mac(r, str) sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x", r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7])
 
+static struct mgos_onewire* ow;
+static int _pin;
+static int _res;
+
+void ds18b20_init(int pin, int res)
+{
+    _pin = pin;
+    _res = res;
+    ow = mgos_onewire_create(pin);                  // Create one-wire
+    if ( ow == NULL ) {
+        return false;
+    }
+}
+
+void ds18b20_deinit(void)
+{
+    mgos_onewire_close(ow);
+}
+
 // Read all temperatures
-void ds18b20_read_all(int pin, int res, ds18b20_read_t callback) {
+void ds18b20_read_all(int pin, int res, ds18b20_read_t callback)
+{
     uint8_t rom[8], data[9];
     int16_t raw;
     int us, cfg;
-    struct mgos_onewire *ow;
     struct ds18b20_result *temp, *list = NULL;
 
     // Step 1: Determine config
@@ -27,7 +46,7 @@ void ds18b20_read_all(int pin, int res, ds18b20_read_t callback) {
     else /* 12-bit */     { cfg=0x7F;  us=750000; } // 12-bit resolution (750ms delay)
 
     // Step 2: Find all the sensors
-    ow = mgos_onewire_create(pin);                  // Create one-wire
+    // ow = mgos_onewire_create(pin);                  // Create one-wire
     mgos_onewire_search_clean(ow);                  // Reset search
     while ( mgos_onewire_next(ow, rom, 1) ) {       // Loop over all devices
         if (rom[0] != 0x28) continue;               // Skip devices that are not DS18B20's
