@@ -11,7 +11,7 @@ Add to libs section of your mos.yml.
 
 ```yml
 libs:
-    https://github.com/maclema/mongoose-os-ds18b20
+    https://github.com/uhey22e/mongoose-os-ds18b20
 ```
 
 ## Usage
@@ -30,12 +30,18 @@ void temperatures_cb(struct ds18b20_result *results) {
         printf("ROM: %s, Temp: %f\n", results->mac, results->temp);
         results = results->next;
     }
+
+    // Deinitialize if you never use it
+    ds18b20_deinit();
 }
 
 // Mongoose application initialization
 enum mgos_app_init_result mgos_app_init(void) {
-    // Read all the temperatures (GPIO 4, 9-bit resolution)
-    ds18b20_read_all(4, 9, temperatures_cb);
+    // Initialize (GPIO 4, 9-bit resolution)
+    ds18b20_init(4, 9);
+
+    // Read all the temperatures
+    ds18b20_read_all(temperatures_cb);
     
     // Init OK
     return MGOS_APP_INIT_SUCCESS;
