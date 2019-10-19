@@ -5,10 +5,6 @@
 Ultra-simple C library for DS18B20 sensors. Connect all the sensors data pins
 to a single GPIO pin, and then call ds18b20_read_all. That's it.
 
-### 注意
-未完成のライブラリです。
-mJS用のAPIを使用するとクラッシュします。
-
 ## Install
 
 Add to libs section of your mos.yml.
@@ -18,7 +14,7 @@ libs:
     https://github.com/uhey22e/mongoose-os-ds18b20
 ```
 
-## Usage
+## Usage in C
 
 ```c
 #include "mgos.h"
@@ -56,6 +52,34 @@ enum mgos_app_init_result mgos_app_init(void) {
 // 10-bit resolution:  187.5ms read time
 // 11-bit resolution:  375ms read time
 // 12-bit resolution:  750ms read time
+```
+
+## Usage in mJS
+
+```javascript
+load('api_ds18b20.js');
+
+DS18B20.init(25, 10);
+
+Timer.set(2000, Timer.REPEAT, function () {
+  Log.info("Timer Callback");
+  DS18B20.read_all();
+  // Wait 100ms for conversion
+  Timer.set(100, false, function () {
+    let index = 0;
+    // Loop over each result
+    while (true) {
+      let result = DS18B20.getResultByIdx(index);
+      if (!result) {
+        break;
+      }
+      print(result.mac);
+      print(result.temp);
+      index++;
+    }
+  }, null);
+}, null);
+
 ```
 
 ## Multi-Sensor Wiring
