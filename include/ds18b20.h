@@ -5,7 +5,7 @@
 
 typedef struct ds18b20_result {
     uint8_t rom[8];
-    char mac[24];
+    char* mac;
     float temp;
     struct ds18b20_result* next;
 } ds18b20_result;
@@ -19,4 +19,5 @@ void ds18b20_read_all(ds18b20_read_t callback);
 
 // For mJS API
 const struct mjs_c_struct_member* get_ds18b20_result_descr( void );
-void ds18b20_read_all_wrap( void (*callback)(void *), void* user_data );
+void ds18b20_read_all_wrap(void);
+void * get_result_by_idx(int idx);
